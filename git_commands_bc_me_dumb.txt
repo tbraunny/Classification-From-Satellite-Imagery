@@ -1,0 +1,5 @@
+git checkout feature-branch
+git fetch origin
+git merge origin/dev
+git merge origin/main
+git push origin feature-branch  # optional
