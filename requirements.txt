@@ -1,0 +1,14 @@
+numpy
+pillow #For image importing
+matplotlib 
+# torch #later for cuda
+# torchvision
+
+#To create virtual environment called venv
+# python3 -m venv venv
+
+#Install of pip requirements
+# pip install -r requirements.txt
+
+#Activate venv #On Windows use `venv\Scripts\activate`
+# source venv/bin/activate
