@@ -15,11 +15,13 @@ opencv-python
 #YAML
 pyyaml
 
-#To create virtual environment called venv
+#To create virtual environment called venv, atta boy
 # python3 -m venv venv
 
 #Install of pip requirements
 # pip install -r requirements.txt
+# bruh I still need help with environment help
 
 #Activate venv #On Windows use `venv\Scripts\activate`
 # source venv/bin/activate
+# working on it
