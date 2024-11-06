@@ -3,8 +3,12 @@ pillow #For image importing
 matplotlib 
 
 torch
-torchvision
-torchaudio
+#torchvision
+#torchaudio
+os
+cv2
+glob
+scikit-learn
 
 #For yolo
 ultralytics
