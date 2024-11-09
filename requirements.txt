@@ -1,26 +1,35 @@
 numpy
 pillow #For image importing
-matplotlib 
+matplotlib.pyplot 
 
 torch
-torchvision
-torchaudio
+#torch.nn
+#torch.optim
+#torch.nn.functional
+#torch.utils.data
+#torchvision
+#torchaudio
+os
+opencv-python
+glob
+scikit-learn
 
 #For yolo
 ultralytics
-opencv-python
-#Need to download yolo11x-seg.pt file from MAKE SURE IT IS IN .gitignore
+#opencv-python listed above
+#Need to download yolo11x-seg.pt file from
 #https://docs.ultralytics.com/tasks/segment/#models
 
 #YAML
 pyyaml
 
-#To create virtual environment called venv
+#To create virtual environment called venv, atta boy
 # python3 -m venv venv
-
-#Activate venv #On Windows use `venv\Scripts\activate`
-# source venv/bin/activate
 
 #Install of pip requirements
 # pip install -r requirements.txt
+# bruh I still need help with environment help
 
+#Activate venv #On Windows use `venv\Scripts\activate`
+# source venv/bin/activate
+# working on it
