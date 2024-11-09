@@ -13,11 +13,10 @@ from sklearn.model_selection import train_test_split
 # new iteration, do not save images as torch tensors
 # improve accuracy measures, print images, confusion matrix, false positives, etc.
 
-
 # load dataset, return images & labels as numpy arrays
 def load_dataset():
     print("Loading image data...")
-    basepath = 'C:\\Undergraduate\\Year 4\\CS 482\\final_project\\planesnet\\planesnet'
+    basepath = 'datasets\planesnet\scenes\planesnet\planesnet'
     images , labels = [] , []
 
     # loop thru each class to find all files with name starting with label_*
