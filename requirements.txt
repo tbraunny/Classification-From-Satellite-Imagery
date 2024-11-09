@@ -1,18 +1,22 @@
 numpy
 pillow #For image importing
-matplotlib 
+matplotlib.pyplot 
 
 torch
+#torch.nn
+#torch.optim
+#torch.nn.functional
+#torch.utils.data
 #torchvision
 #torchaudio
 os
-cv2
+opencv-python
 glob
 scikit-learn
 
 #For yolo
 ultralytics
-opencv-python
+#opencv-python listed above
 #Need to download yolo11x-seg.pt file from
 #https://docs.ultralytics.com/tasks/segment/#models
 
