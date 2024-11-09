@@ -1,0 +1,13 @@
+This is how i structured the formats for my 
+datasets/
+    planesnet/ # Renamed from achive
+        planesnet/
+            etc
+        scenes/
+            etc
+        planesnet.json
+    satellite imagery/
+        etc
+        like pngs and jpegs of test unlabeled satellite images
+    
+    

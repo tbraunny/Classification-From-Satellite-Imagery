@@ -9,7 +9,7 @@ torchaudio
 #For yolo
 ultralytics
 opencv-python
-#Need to download yolo11x-seg.pt file from
+#Need to download yolo11x-seg.pt file from MAKE SURE IT IS IN .gitignore
 #https://docs.ultralytics.com/tasks/segment/#models
 
 #YAML
@@ -18,8 +18,9 @@ pyyaml
 #To create virtual environment called venv
 # python3 -m venv venv
 
+#Activate venv #On Windows use `venv\Scripts\activate`
+# source venv/bin/activate
+
 #Install of pip requirements
 # pip install -r requirements.txt
 
-#Activate venv #On Windows use `venv\Scripts\activate`
-# source venv/bin/activate
