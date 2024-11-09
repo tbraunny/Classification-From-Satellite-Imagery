@@ -1,14 +1,10 @@
-This is how i structured the formats for my directories
+*** How to structure git ignored directories ***
 datasets/
-    planesnet/ # Renamed from achive
-        planesnet/
-            etc
-        scenes/
-            etc
-        planesnet.json
+    planesnet/ # copy and paste the same 'archive' folder from online and just rename it planesnet
     satellite imagery/
         etc
         like pngs and jpegs of test unlabeled satellite images
+    yolo genereated dataset/
 
 models/
     yolo11x-obb.pt #download from -> https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11x-obb.pt or -> https://docs.ultralytics.com/models/yolo11/#performance-metrics
