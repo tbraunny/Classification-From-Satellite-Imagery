@@ -31,8 +31,6 @@ def load_dataset():
             images.append(img)
             labels.append(label)
 
-        print(f"{label}\t{len(images)}")
-
     # convert to np arrays for easier handling
     images = np.array(images)
     labels = np.array(labels)
@@ -66,7 +64,7 @@ class CNN(nn.Module):
         self.conv1 = nn.Conv2d(3 , 20, 3, 1, padding=1)
         self.conv2 = nn.Conv2d(20 , 64 , 3 , 1 , padding=1)
         self.fc1 = nn.Linear(1600 , 128)
-        self.fc2 = nn.Linear(128 , 64)
+        self.fc2 = nn.Linear(128 , 2)
         self.bn1 = nn.BatchNorm2d(20)
         self.bn2 = nn.BatchNorm2d(64)
         self.dropout1 = nn.Dropout(0.5)
@@ -103,8 +101,8 @@ def train_cnn(train_loader , test_loader):
     cnn = CNN()
 
     # hyperparameters
-    num_epochs = 50
-    learning_rate = 0.001
+    num_epochs = 80
+    learning_rate = 0.0001
     optimizer = optim.Adam(cnn.parameters() , learning_rate)
     train_loss , test_loss , train_accuracy , test_accuracy = [] , [] , [] , []
     
@@ -153,6 +151,8 @@ def train_cnn(train_loader , test_loader):
             'optimizer_state_dict': optimizer.state_dict(),
             'loss': train_loss[-1],
             }, f'./planesnet_weights.pt')
+    
+    print("Training complete")
 
     return train_loss , test_loss , train_accuracy , test_accuracy
 
