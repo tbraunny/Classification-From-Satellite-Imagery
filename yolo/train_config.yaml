@@ -1,0 +1,4 @@
+train: datasets/yolo_inference_dataset/train
+val: datasets/yolo_inference_dataset/val
+nc: 2
+names: ["no_plane", "plane"]
