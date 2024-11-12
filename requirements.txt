@@ -10,6 +10,7 @@ scikit-learn
 
 #For yolo
 ultralytics
+pycocotools
 
 
 

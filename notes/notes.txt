@@ -5,8 +5,9 @@ datasets/
         etc
         like pngs and jpegs of test unlabeled satellite images
     yolo genereated dataset/
+    HRPlanes/ # https://universe.roboflow.com/alban-tchikladze-kxzqe/hrplanesv2-7alnq/dataset/3
+
 
 models/
     yolo11x-obb.pt #download from -> https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11x-obb.pt or -> https://docs.ultralytics.com/models/yolo11/#performance-metrics
-    
     
