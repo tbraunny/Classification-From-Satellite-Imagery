@@ -1,21 +1,7 @@
 *** How to structure directories ***
 .
-├── Inference
-│   └── faster rcnn
-│       ├── HRPlanes test
-│       └── unlabeled_images
 ├── cnn
 ├── datasets
-│   ├── HRPlanes
-│   │   ├── test
-│   │   │   ├── images
-│   │   │   └── labels
-│   │   ├── train
-│   │   │   ├── images
-│   │   │   └── labels
-│   │   └── valid
-│   │       ├── images
-│   │       └── labels
 │   ├── HRPlanes_coco
 │   │   ├── test
 │   │   ├── train
@@ -27,6 +13,10 @@
 │       └── scenes
 │           └── scenes
 ├── faster rcnn
+├── inference outputs
+│   └── faster rcnn
+│       ├── HRPlanes test
+│       └── external images
 ├── models
 ├── notes
 └── yolo
