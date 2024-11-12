@@ -387,18 +387,18 @@ def main(train=True):
     if train:
         detector.train_model(train_loader, valid_loader, epochs=20, patience=3, lr=0.01)
 
-    # # Test model on HRPlanes Test dataset
-    output_path = "Inference/faster rcnn/HRPlanes test"
-    inference_engine = InferenceEngine(model_path=model_path, num_classes=2, threshold=0.95, output_dir=output_path)
-    results = inference_engine.predict(test_loader)
-    inference_engine.visualize_predictions(results,mean,std)
+    # # # Test model on HRPlanes Test dataset
+    # output_path = "Inference/faster rcnn/HRPlanes test"
+    # inference_engine = InferenceEngine(model_path=model_path, num_classes=2, threshold=0.97, output_dir=output_path)
+    # results = inference_engine.predict(test_loader)
+    # inference_engine.visualize_predictions(results,mean,std)
 
     # Instantiate the unlabeled dataset for inference
-    unlabeled_dataset = UnlabeledImagesDataset(root_dir='datasets/planesnet/scenes/scenes/', transform=transform)
+    unlabeled_dataset = UnlabeledImagesDataset(root_dir='datasets/external images/', transform=transform)
     unlabeled_loader = DataLoader(unlabeled_dataset, batch_size=18, shuffle=False, pin_memory=True, num_workers=10, collate_fn=collate_fn_for_unlabeled)
 
     # Inference on unlabeled images
-    inference_engine = InferenceEngine(model_path=model_path, num_classes=2, threshold=0.95, output_dir="Inference/faster rcnn/unlabeled_images")
+    inference_engine = InferenceEngine(model_path=model_path, num_classes=2, threshold=0.7, output_dir="Inference/faster rcnn/unlabeled_images")
     unlabeled_results = inference_engine.predict(unlabeled_loader)
     inference_engine.visualize_predictions(unlabeled_results, mean, std)
 
