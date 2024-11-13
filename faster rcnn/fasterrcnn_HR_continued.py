@@ -287,14 +287,14 @@ def collate_fn_for_unlabeled(batch):
 
 def main(train=True, test=True, inference=True):
 
-    # Define filepaths
-    HRPlanes_path_train = 'datasets/HRPlanes/train/images'
+    # Define file paths
+    HRPlanes_path_train = 'datasets/HRPlanes_coco/train/'
     annotation_HRPlanes_path_train = 'datasets/HRPlanes_coco/train/_annotations.coco.json'
 
-    HRPlanes_path_valid = 'datasets/HRPlanes/valid/images'
+    HRPlanes_path_valid = 'datasets/HRPlanes_coco/valid/'
     annotation_HRPlanes_path_valid = 'datasets/HRPlanes_coco/valid/_annotations.coco.json'
 
-    HRPlanes_path_test = 'datasets/HRPlanes/test/images'
+    HRPlanes_path_test = 'datasets/HRPlanes_coco/test/'
     annotation_HRPlanes_path_test = 'datasets/HRPlanes_coco/test/_annotations.coco.json'
 
     external_images_path = 'datasets/external images/'

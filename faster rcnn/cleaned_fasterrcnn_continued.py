@@ -1,5 +1,7 @@
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 import os
 import torch
+import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import torchvision.transforms as T
@@ -11,6 +13,7 @@ import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
 import matplotlib.patches as patches
 from pycocotools.coco import COCO
+import torchmetrics
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -90,19 +93,20 @@ class UnlabeledImagesDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return image
+        place_holder = None
+        return image, place_holder
 
 
 def compute_mean_std(dataset):
     """
     Compute the mean and standard deviation of a dataset for normalization.
     """
-    loader = DataLoader(dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=collate_fn_for_mean_std)
+    loader = DataLoader(dataset, batch_size=64, num_workers=4, shuffle=False, collate_fn=collate_fn)
     mean = torch.zeros(3)
     std = torch.zeros(3)
     total_images = 0
 
-    for images in loader:
+    for images, _ in loader:
         batch_samples = len(images)
         images = torch.stack(images)  # Stack images into a tensor
         images = images.view(batch_samples, images.size(1), -1)
@@ -126,163 +130,37 @@ def denormalize(image, mean, std):
     return denormalized_image
 
 # Custom collate functions
-# HRPlanes images have a varying number of bounding boxes
+# HRPlanes images have a varying number of bounding boxes so custom collate needed
 def collate_fn(batch):
     images, targets = zip(*batch)
     images = list(images)
     targets = list(targets)
     return images, targets
 
-
 def collate_fn_for_mean_std(batch):
     images, _ = zip(*batch)
     return images
 
-def collate_fn_unlabeled(batch):
-    return [image for image in batch]
 
 
-class PlaneDetector:
-    """
-    Class for initializing, training, and evaluating the object detection model.
-    """
-    def __init__(self, num_classes=2, model_path='models/fasterrcnn.pth'):
-        self.model_path = model_path
-        self.model = self._init_model(num_classes)
-        self.model.to(device)
+class Inference:
+    def __init__(self, model, device, threshold=0.5, output_dir="./"):
 
-    def _init_model(self, num_classes):
-        """
-        Initialize the Faster R-CNN model with the specified number of classes.
-        """
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
-        in_features = model.roi_heads.box_predictor.cls_score.in_features
-        # Replace the pre-trained head with a new one
-        model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-        return model
+        self.model = model
+        self.threshold=threshold
+        self.output_dir=output_dir
+        self.device = device
+        self.num_classes = 2
 
-    def train_model(self, train_loader, valid_loader, epochs=10, patience=3, lr=0.005):
-        """
-        Train the model using the provided training and validation data loaders.
-        """
-        optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
-        best_val_loss = float('inf')
-        patience_counter = 0
-
-        for epoch in range(epochs):
-            self.model.train()
-            train_loss = 0
-
-            for batch_idx, (images, targets) in enumerate(train_loader):
-                images = [img.to(device) for img in images]
-                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-                optimizer.zero_grad()
-
-                # Calculate loss
-                loss_dict = self.model(images, targets)
-                losses = sum(loss for loss in loss_dict.values())
-                losses.backward()
-                optimizer.step()
-                train_loss += losses.item()
-
-                print(f"\rEpoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(train_loader)}], Loss: {losses.item():.4f} ", end="")
-
-            train_loss /= len(train_loader)
-
-            # Validation loop
-            val_loss = self.evaluate(valid_loader)
-            print(f"\nEpoch [{epoch + 1}/{epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f} ")
-
-            # Early stopping based on validation loss
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                patience_counter = 0
-                self.save_model()
-            else:
-                patience_counter += 1
-                print(f"Patience Counter: {patience_counter}")
-                if patience_counter >= patience:
-                    print("Stopped training due to overfitting.")
-                    break
-        print(f"Training complete. Saved model to {self.model_path}")
-
-    def evaluate(self, data_loader):
-        """
-        Evaluate the model on the validation set and compute the loss.
-        """
-        self.model.train()  # Set model to evaluation mode
-        val_loss = 0
-        with torch.no_grad():
-            for images, targets in data_loader:
-                images = [img.to(device) for img in images]
-                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
-
-                # Calculate loss
-                loss_dict = self.model(images, targets)
-                losses = sum(loss for loss in loss_dict.values())
-                val_loss += losses.item()
-
-        val_loss /= len(data_loader)
-        # self.model.train()
-        return val_loss
-
-    def save_model(self):
-        """
-        Save the trained model to disk.
-        """
-        torch.save(self.model.state_dict(), self.model_path)
-        print(f"Model saved to {self.model_path}")
-
-    def load_model(self):
-        """
-        Load the model from disk for inference.
-        """
-        self.model.load_state_dict(torch.load(self.model_path, map_location=device))
-        self.model.to(device)
+    def predict(self, dataloader):
         self.model.eval()
-        print("Model loaded for inference.")
-
-
-class InferenceEngine:
-    """
-    Class for performing inference and visualization using a trained model.
-    """
-    def __init__(self, model_path='models/fasterrcnn.pth', num_classes=2, threshold=0.5, output_dir='Inference/faster rcnn'):
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = self._init_model(num_classes)
-        self.model.load_state_dict(torch.load(model_path, map_location=self.device, weights_only=True))
-        self.model.to(self.device)
-        self.model.eval()
-        self.threshold = threshold
-        self.output_dir = output_dir
-
-    def _init_model(self, num_classes):
-        """
-        Initialize the Faster R-CNN model with the specified number of classes.
-        """
-        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
-        in_features = model.roi_heads.box_predictor.cls_score.in_features
-        # Replace the pre-trained head with a new one
-        model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
-        return model
-
-    def predict(self, data_loader):
         results = []
         with torch.no_grad():
-            for batch in data_loader:
-                # Handle case where only images are in the batch
-                if isinstance(batch, tuple) and len(batch) == 2:
-                    images, _ = batch
-                else:
-                    images = batch
-
-                # Flatten `images` if it's a nested list and filter out non-tensor items
-                if isinstance(images, list):
-                    images = [img for sublist in images for img in (sublist if isinstance(sublist, list) else [sublist])]
-                    images = [img for img in images if isinstance(img, torch.Tensor)]  # Filter out any dicts or non-tensors
+            for images, _ in dataloader:
 
                 # Move images to device
                 images = [img.to(self.device) for img in images]
+
 
                 # Perform inference
                 outputs = self.model(images)
@@ -295,7 +173,77 @@ class InferenceEngine:
         return results
 
 
-    def visualize_predictions(self, results, mean, std):
+    def evaluate(self, dataloader):
+        """
+        Compute Top-1, Top-5 accuracy, and Mean Average Precision (mAP).
+        """
+        self.model.eval()
+
+        map_metric = torchmetrics.detection.mean_ap.MeanAveragePrecision(box_format='xyxy', iou_type='bbox').to(self.device)
+        
+        top1_correct = 0
+        top5_correct = 0
+        total_samples = 0
+        # Set model to evaluation mode
+        results = []
+
+        with torch.no_grad():
+            for images, targets in dataloader:
+
+                images = [img.to(self.device) for img in images]
+                targets = [{k: v.to(self.device) for k, v in t.items()} for t in targets]
+                
+                # Run inference
+                outputs = self.model(images)
+
+                for img, output in zip(images, outputs):
+                    boxes = output['boxes'][output['scores'] >= self.threshold]
+                    scores = output['scores'][output['scores'] >= self.threshold]
+                    results.append((img, boxes, scores))
+
+                for target, output in zip(targets, outputs):
+                    true_labels = target['labels']
+                    pred_scores = output['scores']
+                    pred_labels = output['labels']
+
+                    # Update mAP metric
+                    map_metric.update([output], [target])
+
+                    # Apply confidence threshold
+                    mask = pred_scores >= self.threshold
+                    filtered_scores = pred_scores[mask]
+                    filtered_labels = pred_labels[mask]
+
+                    # Top-1 and Top-5 Accuracy
+                    if len(filtered_labels) > 0:
+                        # Sort predictions by confidence
+                        sorted_indices = filtered_scores.argsort(descending=True)
+                        sorted_labels = filtered_labels[sorted_indices]
+
+                        # Top-1: Check if top prediction is correct
+                        top1_correct += (sorted_labels[0] == true_labels[0]).item()
+
+                        # Top-5: Check if true label is in top 5 predictions
+                        top5_correct += (true_labels[0] in sorted_labels[:5])
+
+                    total_samples += 1
+    
+
+        # Calculate metrics
+        top1_accuracy = top1_correct / total_samples
+        top5_accuracy = top5_correct / total_samples
+        mean_ap = map_metric.compute()['map'].item()
+
+        # Print Results
+        print(f"Top-1 Accuracy: {top1_accuracy:.4f}")
+        print(f"Top-5 Accuracy: {top5_accuracy:.4f}")
+        print(f"Mean Average Precision (mAP): {mean_ap:.4f}")
+
+        self.model.train()
+
+        return results
+
+    def save_predictions(self, results, mean, std):
         """
         Visualize predictions and save the images with bounding boxes.
         """
@@ -327,6 +275,109 @@ class InferenceEngine:
             plt.savefig(output_path, bbox_inches='tight', pad_inches=0.1)
             plt.close(fig)
             print(f"\rSaved prediction to {output_path} ", end="")
+
+
+
+class PlaneDetector:
+    """
+    Class for initializing, training, and evaluating the object detection model.
+    """
+    def __init__(self, num_classes=2, model_path='models/fasterrcnn.pth'):
+        self.model_path = model_path
+        self.model = self._init_model(num_classes)
+        self.model.to(device)
+
+    def _init_model(self, num_classes):
+        """
+        Initialize the Faster R-CNN model with the specified number of classes.
+        """
+        model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
+        in_features = model.roi_heads.box_predictor.cls_score.in_features
+        # Replace the pre-trained head with a new one
+        model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+        return model
+
+    def train_model(self, train_loader, valid_loader, epochs=10, patience=3, lr=0.005):
+        """
+        Train the model using the provided training and validation data loaders.
+        """
+        self.model.train()
+
+        optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
+        best_val_loss = float('inf')
+        patience_counter = 0
+
+        for epoch in range(epochs):
+            train_loss = 0
+
+            for batch_idx, (images, targets) in enumerate(train_loader):
+                images = [img.to(device) for img in images]
+                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                optimizer.zero_grad()
+
+                # Calculate loss
+                loss_dict = self.model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+                losses.backward()
+                optimizer.step()
+                train_loss += losses.item()
+
+                print(f"\rEpoch [{epoch+1}/{epochs}], Batch [{batch_idx+1}/{len(train_loader)}], Loss: {losses.item():.4f} ", end="")
+
+            train_loss /= len(train_loader)
+
+            # Validation loop
+            val_loss = self.validation_check(valid_loader)
+            print(f"\nEpoch [{epoch + 1}/{epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f} ")
+
+            # Early stopping based on validation loss
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                patience_counter = 0
+                self.save_model()
+            else:
+                patience_counter += 1
+                print(f"Patience Counter: {patience_counter}")
+                if patience_counter >= patience:
+                    print("Stopped training due to overfitting.")
+                    break
+        print(f"Training complete. Saved model to {self.model_path}")
+
+    def validation_check(self, data_loader):
+        """
+        Evaluate the model on the validation set and compute the loss.
+        """
+        val_loss = 0
+
+        with torch.no_grad():
+            for images, targets in data_loader:
+                images = [img.to(device) for img in images]
+                targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+
+                # Calculate loss
+                loss_dict = self.model(images, targets)
+                losses = sum(loss for loss in loss_dict.values())
+                val_loss += losses.item()
+
+
+        val_loss /= len(data_loader)
+        return val_loss
+
+    def save_model(self):
+        """
+        Save the trained model to disk.
+        """
+        torch.save(self.model.state_dict(), self.model_path)
+        print(f"Model saved to {self.model_path}")
+    def load_model(self):
+        """
+        Load the model from disk for inference.
+        """
+        self.model.load_state_dict(torch.load(self.model_path, map_location=device))
+        self.model.to(device)
+        self.model.eval()
+        print("Model loaded for inference.")
+
 
 
 def main(train=True, test=True, inference=True):
@@ -389,36 +440,39 @@ def main(train=True, test=True, inference=True):
     train_loader = DataLoader(train_dataset, batch_size=18, shuffle=True, pin_memory=True, num_workers=10, collate_fn=collate_fn)
     valid_loader = DataLoader(valid_dataset, batch_size=18, shuffle=False, pin_memory=True, num_workers=10, collate_fn=collate_fn)
     test_loader = DataLoader(test_dataset, batch_size=18, shuffle=False, pin_memory=True, num_workers=10, collate_fn=collate_fn)
-    unlabeled_loader = DataLoader(unlabeled_dataset, batch_size=18, shuffle=False, pin_memory=True, num_workers=10, collate_fn=collate_fn_unlabeled)
+    unlabeled_loader = DataLoader(unlabeled_dataset, batch_size=18, shuffle=False, pin_memory=True, num_workers=10, collate_fn=collate_fn)
     
 
 
     # Train model and save
-    if train:
-        detector = PlaneDetector(num_classes=2, model_path=model_path)
-        detector.train_model(train_loader, valid_loader, epochs=50, patience=3, lr=0.01)
+    detector = PlaneDetector(num_classes=2, model_path=model_path)
 
+    if train:
+        detector.train_model(train_loader, valid_loader, epochs=50, patience=3, lr=0.01)
     # Check if model file exists
     if not os.path.exists(model_path):
         print("Model file not found. Make sure the model is trained and saved.")
         return
 
+    # Load the trained model
+    model = detector.model
+    detector.load_model()
 
+    # # Load the trained model
+    # model = PlaneDetector(num_classes=2, model_path=model_path).model
 
-    # Inference model on HRPlanes test dataset and save bound boxed images to dir
+    # model.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
+
+    # Create Evaluator instance and compute metrics
+    evaluator = Inference(model, device, threshold = 0.97, output_dir=test_output_path)
+
     if test:
-        test_inference_engine = InferenceEngine(model_path=model_path, num_classes=2, threshold=0.97, output_dir=test_output_path)
-        test_results = test_inference_engine.predict(test_loader)
-        test_inference_engine.visualize_predictions(test_results,mean,std)
+        eval_results = evaluator.evaluate(test_loader)
+        evaluator.save_predictions(eval_results, mean, std)
 
-
-
-    # Perform inference and save bound boxed images to dir
     if inference:
-        external_inference_engine = InferenceEngine(model_path=model_path, num_classes=2, threshold=0.5, output_dir=external_output_path)
-        external_images_results = external_inference_engine.predict(unlabeled_loader)
-        external_inference_engine.visualize_predictions(external_images_results, mean, std)
-
+        eval_results = evaluator.predict(unlabeled_loader)
+        evaluator.save_predictions(eval_results, mean, std)
 
 if __name__ == '__main__':
     main(train=True, test=True, inference=True)

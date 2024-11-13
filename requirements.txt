@@ -5,6 +5,7 @@ matplotlib
 torch
 torchvision
 torchaudio
+torchmetrics
 opencv-python
 scikit-learn
 
