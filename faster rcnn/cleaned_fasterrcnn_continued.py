@@ -1,7 +1,6 @@
 from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
 import os
 import torch
-import numpy as np
 from torch.utils.data import Dataset, DataLoader
 from PIL import Image
 import torchvision.transforms as T
@@ -14,6 +13,7 @@ import torchvision.transforms.functional as F
 import matplotlib.patches as patches
 from pycocotools.coco import COCO
 import torchmetrics
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -304,6 +304,7 @@ class PlaneDetector:
         self.model.train()
 
         optimizer = optim.SGD(self.model.parameters(), lr=lr, momentum=0.9, weight_decay=0.0005)
+        scheduler = ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=3, verbose=True)
         best_val_loss = float('inf')
         patience_counter = 0
 
@@ -328,6 +329,7 @@ class PlaneDetector:
 
             # Validation loop
             val_loss = self.validation_check(valid_loader)
+            scheduler.step(val_loss)
             print(f"\nEpoch [{epoch + 1}/{epochs}], Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f} ")
 
             # Early stopping based on validation loss
