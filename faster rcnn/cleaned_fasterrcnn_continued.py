@@ -15,11 +15,8 @@ from pycocotools.coco import COCO
 import torchmetrics
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
-# Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print("Device: ", device)
-
-
 
 
 class COCOPlanesDataset(Dataset):
