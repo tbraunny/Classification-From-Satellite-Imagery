@@ -10,11 +10,6 @@ scikit-learn
 # test-scene
 time
 
-# logistic regression & test use same dependencies
-
-#decision tree
-xgboost
-
 # EXTRA
 # re-feeding false positives (not run in general manifold)
 PIL

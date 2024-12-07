@@ -4,7 +4,10 @@ __pycache__/
 .DS_Store
 
 venv/
-datasets/
+#data/
 models/
 runs/
+yolo/
+faster rcnn/
+notes/
 inference outputs/
