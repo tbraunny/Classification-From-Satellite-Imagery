@@ -1,1 +1,2 @@
 -r "requirements/requirements-faster_rcnn.txt"
+-r "requirements/requirements-cnn.txt
