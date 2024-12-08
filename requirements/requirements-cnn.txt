@@ -1,8 +1,7 @@
 # cnn
 numpy
 torch
-os
-cv2
+opencv-python
 matplotlib
 glob
 scikit-learn
