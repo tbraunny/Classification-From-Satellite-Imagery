@@ -4,7 +4,8 @@ __pycache__/
 .DS_Store
 
 venv/
-#data/
+data/planesnet/
+data/saved_models/
 models/
 runs/
 yolo/
