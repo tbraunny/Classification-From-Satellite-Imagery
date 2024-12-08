@@ -1,0 +1,9 @@
+pillow
+matplotlib
+torch
+torchvision
+torchaudio
+torchmetrics
+scikit-learn
+albumentations
+pycocotools

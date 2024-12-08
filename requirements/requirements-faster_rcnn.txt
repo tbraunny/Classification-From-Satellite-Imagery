@@ -1,9 +1,0 @@
-pillow
-matplotlib
-torch
-torchvision
-torchaudio
-torchmetrics
-scikit-learn
-
-pycocotools
