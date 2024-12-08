@@ -44,22 +44,23 @@ class FasterRCNNModel:
         model.roi_heads.box_predictor = FastRCNNPredictor(in_features, self.num_classes)
         return model
 
-    def extract_region_proposals(self, images):
+    def extract_region_proposals(self, images, max_proposals=100):
+        print(f"Extracting region proposals for {len(images)} image(s)...")
         self.model.eval()
         with torch.no_grad():
-            # Convert PIL images to tensors and move them to the correct device
             images = [T.ToTensor()(img).to(DEVICE) for img in images]
-
-            # Transform images using the model's transform to create an ImageList
             image_list, _ = self.model.transform(images)
-
-            # Extract features using the backbone
             features = self.model.backbone(image_list.tensors)
+            proposals, scores = self.model.rpn(image_list, features)
 
-            # Get proposals from the RPN
-            proposals, _ = self.model.rpn(image_list, features)
+        # Process each image's proposals
+        batch_proposals = []
+        for proposal in proposals:
+            batch_proposals.append(proposal[:max_proposals])
+        print(f"Extracted {sum(len(p) for p in batch_proposals)} total proposals.")
+        return batch_proposals
 
-        return proposals
+
 
 
 
@@ -70,6 +71,8 @@ def prepare_data(train_dataset, faster_rcnn, num_samples=100):
     transform = T.Compose([T.Resize((224, 224)), T.ToTensor()])
 
     for i in range(num_samples):
+        print(f"Processing sample {i + 1}/{num_samples}...")  # Progress indicator
+
         image, target = train_dataset[i]  # image is a PIL Image
         proposals = faster_rcnn.extract_region_proposals([image])[0]
 
@@ -92,7 +95,9 @@ def prepare_data(train_dataset, faster_rcnn, num_samples=100):
             # Label: 1 if there's at least one annotated object in the image, else 0
             labels.append(1 if target["boxes"].size(0) > 0 else 0)
 
+    print("Data preparation complete.")  # Final message
     return np.array(features), np.array(labels)
+
 
 
 class LogisticRegressionModel:
@@ -113,20 +118,10 @@ class LogisticRegressionModel:
 import os
 
 def visualize_detections(image, boxes, scores, labels, output_dir, image_id, threshold=0.5):
-    """
-    Save an image with predictions drawn as bounding boxes.
-
-    Args:
-        image: The image tensor (C, H, W) or (H, W, C) format.
-        boxes: Bounding boxes for the image.
-        scores: Confidence scores for the bounding boxes.
-        labels: Class labels for the bounding boxes.
-        output_dir: Directory to save the images.
-        image_id: Unique identifier for the image (used in filename).
-        threshold: Minimum score threshold for displaying bounding boxes.
-    """
     # Ensure the output directory exists
     os.makedirs(output_dir, exist_ok=True)
+
+    print(f"Saving detection visualization for image {image_id}...")  # Progress indicator
 
     # Convert tensor to NumPy array if needed (assumes image is torch.Tensor)
     if isinstance(image, torch.Tensor):
@@ -155,7 +150,7 @@ def visualize_detections(image, boxes, scores, labels, output_dir, image_id, thr
     output_path = os.path.join(output_dir, f"detection_{image_id}.png")
     plt.savefig(output_path, bbox_inches='tight', pad_inches=0.1)
     plt.close(fig)
-    print(f"Saved detection visualization to {output_path}")
+    print(f"Saved detection visualization to {output_path}")  # Log output file
 
 
 
@@ -216,36 +211,25 @@ class COCOCustomDataset(Dataset):
                 # On any other error, also move to the next index
                 idx = (idx + 1) % len(self.image_ids)
 
-
-
 if __name__ == "__main__":
-    # Load the COCO dataset (train set)
-    transform = T.Compose([T.ToTensor()])
-    train_dataset = COCOCustomDataset(root_dir=TRAIN_DIR,
-                                  annotation_file=TRAIN_ANNOTATIONS,
-                                  transform=None)
+    print("Loading dataset...")
+    train_dataset = COCOCustomDataset(root_dir=TRAIN_DIR, annotation_file=TRAIN_ANNOTATIONS, transform=None)
+    print(f"Dataset loaded. Total samples: {len(train_dataset)}")
 
-
-    # Initialize Faster R-CNN
+    print("Initializing Faster R-CNN model...")
     faster_rcnn = FasterRCNNModel(num_classes=2)
 
-    # Prepare Data for Logistic Regression
-    X, y = prepare_data(train_dataset, faster_rcnn, num_samples=100)
+    print("Preparing data for logistic regression...")
+    num_samples = 20  # Reduce the number of samples
+    X, y = prepare_data(train_dataset, faster_rcnn, num_samples=num_samples)
 
-    # Split data for training and evaluation
+    print("Splitting data into training and test sets...")
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Train Logistic Regression
+    print("Training logistic regression model...")
     log_reg = LogisticRegressionModel()
     log_reg.train(X_train, y_train)
 
-    # Evaluate Logistic Regression
+    print("Evaluating logistic regression model...")
     accuracy = log_reg.evaluate(X_test, y_test)
-    print(f"Logistic Regression Accuracy: {accuracy}")
-
-    # Visualize Faster R-CNN Predictions for the first image
-    image, target = train_dataset[0]
-    proposals = faster_rcnn.extract_region_proposals([image])
-    output_dir = "./detections"
-    image_id = 0  # Use a unique identifier for each image
-    visualize_detections(image, proposals[0], [0.9] * len(proposals[0]), ["object"] * len(proposals[0]), output_dir, image_id)
+    print(f"Logistic Regression Accuracy: {accuracy:.2f}")
