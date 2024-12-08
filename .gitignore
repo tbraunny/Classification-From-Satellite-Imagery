@@ -4,7 +4,4 @@ __pycache__/
 .DS_Store
 
 venv/
-datasets/
 models/
-runs/
-inference outputs/

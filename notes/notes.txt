@@ -1,27 +1,2 @@
-*** How to structure directories ***
-.
-├── cnn
-├── datasets
-│   ├── HRPlanes_coco
-│   │   ├── test
-│   │   ├── train
-│   │   └── valid
-│   ├── external images
-│   └── planesnet
-│       ├── planesnet
-│       │   └── planesnet
-│       └── scenes
-│           └── scenes
-├── faster rcnn
-├── inference outputs
-│   └── faster rcnn
-│       ├── HRPlanes test
-│       └── external images
-├── models
-├── notes
-└── yolo
-
 HRPlanes datasets # https://universe.roboflow.com/alban-tchikladze-kxzqe/hrplanesv2-7alnq/dataset/3
 
-yolo11x-obb.pt #download from -> https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11x-obb.pt or -> https://docs.ultralytics.com/models/yolo11/#performance-metrics
-    
