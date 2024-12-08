@@ -81,4 +81,4 @@ def train_model(train_loader , test_loader):
     # )
     print("Training complete")
 
-    return train_accuracy , train_loss , test_accuracy , test_loss
+    return train_loss , test_loss , train_accuracy , test_accuracy
