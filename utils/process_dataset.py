@@ -42,11 +42,11 @@ def load_dataset():
         images = np.array(images , dtype=np.int64)
         labels = np.array(labels , dtype=np.int64)
 
-        images_tensor = torch.tensor(images)
-        labels_tensor = torch.tensor(labels)
+        images = torch.tensor(images , dtype=torch.int64).permute(0 , 3 , 1 , 2)
+        labels = torch.tensor(labels , dtype=torch.int64)
 
         # Save tensors to a file
-        torch.save((images_tensor, labels_tensor) , os.path.join(saved_models_path , 'planesnet_tensors.pt'))
+        torch.save((images , labels) , os.path.join(saved_models_path , 'planesnet_tensors.pt'))
 
     return images , labels
 

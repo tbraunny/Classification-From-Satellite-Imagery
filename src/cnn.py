@@ -3,6 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import os
+from sklearn.metrics import confusion_matrix , ConfusionMatrixDisplay , classification_report
+import matplotlib.pyplot as plt
+import numpy as np
 
 # define model network
 class CNN(nn.Module):
@@ -77,6 +80,7 @@ def train_model(train_loader , test_loader):
 
         # test accuracy
         cnn.eval()
+        y_pred , y_test = [] , []
         running_loss , num_correct = 0 , 0
         with torch.no_grad():
             for (data , target) in test_loader:
@@ -84,6 +88,8 @@ def train_model(train_loader , test_loader):
                 loss = F.nll_loss(test_outputs , target)
                 running_loss += loss.item()
                 pred = test_outputs.argmax(dim=1, keepdim=True)
+                y_pred.append(pred)
+                y_test.append(target.view_as(pred))
                 num_correct += pred.eq(target.view_as(pred)).sum().item()
         test_acc = num_correct / len(test_loader.dataset)
 
@@ -92,14 +98,23 @@ def train_model(train_loader , test_loader):
         test_loss.append((running_loss , epoch))
         print(f"\t Test Loss: {running_loss} \t Test Accuracy: {test_acc}\n") # print loss, accuracy
 
-    save_path = "../results"
-    torch.save({
-            'epoch': num_epochs,
-            'model_state_dict': cnn.state_dict(),
-            'optimizer_state_dict': optimizer.state_dict(),
-            'loss': train_loss[-1],
-            }, os.path.join(save_path , 'cnn_weights.pt'))
+    y_test = torch.cat(y_test).cpu().numpy() # flatten for analysis
+    y_pred = torch.cat(y_pred).cpu().numpy()
+    cm = confusion_matrix(y_test , y_pred)
+    cm = ConfusionMatrixDisplay(confusion_matrix=cm)
+    cm.plot()
+    print(classification_report(y_test , y_pred))
+
+    plt.savefig("results/confusion_matrix_cnn.png")
+
+    # save_path = "results"
+    # torch.save({
+    #         'epoch': num_epochs,
+    #         'model_state_dict': cnn.state_dict(),
+    #         'optimizer_state_dict': optimizer.state_dict(),
+    #         'loss': train_loss[-1],
+    #         }, os.path.join(save_path , 'cnn_weights.pt'))
     
-    print("Training complete")
+    # print("Training complete")
 
     return train_loss , test_loss , train_accuracy , test_accuracy

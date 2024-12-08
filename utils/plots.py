@@ -2,8 +2,8 @@ import matplotlib.pyplot as plt
 import os
 
 # plot loss & accuracy, save to results
-def plot(train_loss , test_loss , train_accuracy , test_accuracy):
-    save_dir = "../results"
+def plot(train_loss , test_loss , train_accuracy , test_accuracy , model):
+    save_dir = "results"
 
     # loss
     plt.plot(train_loss , color='blue' , label="Train")
@@ -13,7 +13,7 @@ def plot(train_loss , test_loss , train_accuracy , test_accuracy):
     plt.title("Epochs vs. Loss")
     plt.legend()
 
-    loss_path = os.path.join(save_dir , "loss_plot.png")
+    loss_path = os.path.join(save_dir , f'loss_plot_{model.__name__}.png')
     plt.savefig(loss_path)
     plt.show()
 
@@ -25,6 +25,6 @@ def plot(train_loss , test_loss , train_accuracy , test_accuracy):
     plt.title("Epochs vs. Accuracy")
     plt.legend()
 
-    accuracy_path = os.path.join(save_dir , "accuracy_plot.png")
+    accuracy_path = os.path.join(save_dir , f'accuracy_plot_{model.__name__}.png')
     plt.savefig(accuracy_path)
     plt.show()

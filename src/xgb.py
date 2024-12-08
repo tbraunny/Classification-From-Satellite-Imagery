@@ -7,9 +7,11 @@ import torch
 import utils
 import joblib
 import os
-import sys
+import matplotlib.pyplot as plt
+import numpy as np
+from sklearn.metrics import confusion_matrix , ConfusionMatrixDisplay , classification_report
 
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'utils')))
+#sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'utils')))
 
 save_dir = "data/saved_models"
 
@@ -29,7 +31,7 @@ X_test , y_test = utils.process_dataset.data_preprocess(X , y , flag=True) # fla
 pred1 , pred2 = 0 , 0
 
 with torch.no_grad():
-    X_test = X_test.permute(0, 3, 1, 2)
+    X_test = X_test.permute(0, 1, 3, 2)
     pred1 = log_reg(X_test.float()).numpy()
     pred2 = cnn(X_test.float()).numpy()
 
@@ -39,3 +41,15 @@ xgb_model = XGBClassifier()
 xgb_model.fit(xgb_features, y_test)
 
 joblib.dump(xgb_model, os.path.join(save_dir , "xgboost.pkl"))
+
+# Evaluate model
+y_pred = xgb_model.predict(xgb_features)
+
+# Classification report
+print(classification_report(y_test, y_pred))
+
+# Confusion matrix
+cm = confusion_matrix(y_test, y_pred)
+disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+disp.plot()
+plt.savefig(os.path.join("results/confusion_matrix_xgb.png"))

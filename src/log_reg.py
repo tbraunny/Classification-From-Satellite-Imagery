@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from sklearn.metrics import confusion_matrix , ConfusionMatrixDisplay , classification_report
+import numpy as np
+import matplotlib.pyplot as plt
 
 class Log_Reg(nn.Module):
     def __init__(self):
@@ -14,7 +17,7 @@ class Log_Reg(nn.Module):
         x = self.linear(x)
         return F.log_softmax(x , dim=1)
     
-def train_logisitc_regression(train_loader , test_loader):
+def train_model(train_loader , test_loader):
     logistic_regression = Log_Reg()
 
     train_loss , test_loss , train_accuracy , test_accuracy = [] , [] , [] , []
@@ -45,6 +48,7 @@ def train_logisitc_regression(train_loader , test_loader):
         print(f"Epoch {epoch + 1} : Train Loss {running_loss:.6f} : Train Accuracy {train_acc:.6f}")
 
         logistic_regression.eval()
+        y_pred , y_test = [] , []
         running_loss , num_correct = 0 , 0
         with torch.no_grad():
             for (data , target) in test_loader:
@@ -52,6 +56,8 @@ def train_logisitc_regression(train_loader , test_loader):
                 loss = criterion(test_outputs , target)
                 running_loss += loss.item()
                 pred = test_outputs.argmax(dim=1, keepdim=True)
+                y_pred.append(pred)
+                y_test.append(target.view_as(pred))
                 num_correct += pred.eq(target.view_as(pred)).sum().item()
         test_acc = num_correct / len(test_loader.dataset)
 
@@ -59,11 +65,20 @@ def train_logisitc_regression(train_loader , test_loader):
         test_accuracy.append((test_acc , epoch))
         print(f"\t  Test Loss {running_loss:.6f} : Test Accuracy {test_acc:.6f}") # print loss, accuracy
 
-        torch.save({
-            'epoch': num_epochs , 
-            'model_state_dict': logistic_regression.state_dict() ,
-            'loss': train_loss[-1],
-            }, f'./log_reg_weights.pt'
-        )
+    y_test = torch.cat(y_test).cpu().numpy() # flatten for analysis
+    y_pred = torch.cat(y_pred).cpu().numpy()
+    cm = confusion_matrix(y_test , y_pred)
+    cm = ConfusionMatrixDisplay(confusion_matrix=cm)
+    cm.plot()
+    print(classification_report(y_test , y_pred))
+
+    plt.savefig("results/confusion_matrix_log_reg.png")
+    # torch.save({
+    #     'epoch': num_epochs , 
+    #     'model_state_dict': logistic_regression.state_dict() ,
+    #     'loss': train_loss[-1],
+    #     }, f'./log_reg_weights.pt'
+    # )
+    print("Training complete")
 
     return train_accuracy , train_loss , test_accuracy , test_loss
