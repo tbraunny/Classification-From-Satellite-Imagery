@@ -10,9 +10,9 @@ import xgb
 # - 2 : log_reg
 # - 3 : cnn
 model_selection = 3
+scene_num = 1
 
 ############################################
-scene_num = 1
 stride = 3
 pkl_flag = False
 confidence = False
