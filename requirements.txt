@@ -1,3 +1,1 @@
-#-r "requirements/requirements-faster_rcnn.txt"
--r "requirements/requirements-cnn.txt"
--r "requirements/requirements-xgboost.txt"
+-r "requirements/requirements-faster_rcnn.txt"

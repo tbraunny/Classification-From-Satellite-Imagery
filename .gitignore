@@ -4,11 +4,4 @@ __pycache__/
 .DS_Store
 
 venv/
-data/planesnet/
-data/saved_models/
 models/
-runs/
-yolo/
-faster rcnn/
-notes/
-inference outputs/
