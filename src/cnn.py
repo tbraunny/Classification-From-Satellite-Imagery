@@ -2,10 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import os
 from sklearn.metrics import confusion_matrix , ConfusionMatrixDisplay , classification_report
 import matplotlib.pyplot as plt
-import numpy as np
 
 # define model network
 class CNN(nn.Module):

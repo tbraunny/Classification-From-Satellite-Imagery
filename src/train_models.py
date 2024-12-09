@@ -6,8 +6,8 @@ import utils.process_dataset
 #import xgb # not fully integrated yet, runnable from src/xgb.py
 
 # uncomment the model you would like to re-train
-model_to_train = log_reg
-#model_to_train = cnn
+#model_to_train = log_reg
+model_to_train = cnn
 
 ##############################################
 
