@@ -28,7 +28,7 @@ class SceneEvaluator(): # for good practice, eliminate global variables
 
         return img
     
-    def evaluate_scene(self , model , scene , stride , check_confidence=False , flag=False):
+    def evaluate_scene(self , model , scene , stride , log , cnn , flag=False):
         print("Analyzing scene...")
         print(f"\tScene shape: {scene.shape[0]} x {scene.shape[1]}")
         height , width , _ = scene.shape
@@ -54,27 +54,25 @@ class SceneEvaluator(): # for good practice, eliminate global variables
                 img_box = torch.tensor(img_box , dtype=torch.int64).permute(0 , 3 , 1 , 2) # convert to proper size for evalution
                 img_box = img_box / 255 # apply same transformation
                 img_box = img_box.view(1 , 3 , 20 , 20) # ensure same window size
-                if (flag):
-                    img_box = img_box.flatten()[:4].reshape(1, -1)
-                    prediction = model.predict(img_box)
-                else:
+                
+                if (flag): # predict xgb model if flag raised
+                    log_pred = log(img_box.float()).detach().numpy()
+                    cnn_pred = cnn(img_box.float()).detach().numpy()
+                    xgb_features = np.hstack([log_pred , cnn_pred])
+                    prediction = model.predict_proba(xgb_features)
+                    confidence = prediction[:,1] # store probability of class 1 as confidence
+                    prediction = 1 # set prediction to 1 (its always 1, idk why)
+                else: # for logistic & cnn
                     prediction = model(img_box)
-
-                if (check_confidence): # calc confidence for CNN model
                     confidence = torch.softmax(prediction , dim=1)[0 , 1].item() # calc conf to reduce false positives
-                else:
-                    confidence = 1
+                    prediction = prediction.argmax(dim=1 , keepdim=True) # determine positive/negative prediction
 
-                if confidence > 0.87:
-                    if isinstance(prediction , torch.Tensor):
-                        prediction = prediction.argmax(dim=1 , keepdim=True) # determine positive/negative prediction
-                    else:
-                        prediction = np.argmax(prediction , keepdims=True)
+                if confidence > 0.88:                    
                     if prediction == 1:                        
                         sub_img.add_patch(patches.Rectangle((w , h) , 20 , 20 , edgecolor = 'blue' , facecolor='none')) # segment positive prediction  
 
                         plt.draw()
-                        # might need to adjust           
+                        #plt.pause(0.05)          
 
         end = time.time()
         print(f"\nScene Evaluated in {(end - start):.3f} seconds")
@@ -83,3 +81,4 @@ class SceneEvaluator(): # for good practice, eliminate global variables
         save_path = "results"
         scene_num = self.get_scene_num()
         plt.savefig(os.path.join(save_path , f'scene{scene_num}_evalution_{type(model).__name__}.png'))
+        print("Image saved to: " , os.path.join(save_path , f'scene{scene_num}_evalution_{type(model).__name__}.png'))

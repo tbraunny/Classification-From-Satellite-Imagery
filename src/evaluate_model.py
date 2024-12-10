@@ -22,12 +22,11 @@ scene_num = 1
 ############################################
 stride = 3
 pkl_flag = False
-confidence = False
 eval = SceneEvaluator()
 
 if (model_selection == 1):
     print("Evaluating XGBoost...")
-    model = xgb
+    model = xgb.classifier
     pkl_flag = True # if evaluating xgboost
     saved_model_file = 'xgboost.pkl'
 elif (model_selection == 2):
@@ -37,7 +36,6 @@ elif (model_selection == 2):
 elif (model_selection == 3):
     print("Evaluating CNN...")
     model = cnn.CNN()
-    check_confidence = True # CNN needs confidence filter to reduce false positives
     saved_model_file = 'cnn_weights.pt'
 else:
     print("invalid option")
@@ -45,4 +43,4 @@ else:
 
 model_obj = utils.load_model.load_model(model , saved_model_file , flag=pkl_flag)
 scene = eval.load_scene(scene_num)
-eval.evaluate_scene(model_obj , scene , stride , check_confidence=confidence , flag=pkl_flag) # final image shown in results/
+eval.evaluate_scene(model_obj , scene , stride , log=log_reg.Log_Reg() , cnn=cnn.CNN() , flag=pkl_flag) # final image shown in results/

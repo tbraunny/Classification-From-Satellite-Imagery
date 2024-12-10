@@ -2,6 +2,9 @@
 Classifying aircraft from satellite imagery.\
 Using kaggle dataset as input, identify aircraft to determine where images of the ground may be obscured by a flying aircrat
 
+Before running in terminal, must run the following command to ensure relative file path compatibility:
+>export PYTHONPATH=$(pwd)
+
 To start, go to src/evaluate_model.py\
 Enter the model you would like to run\
 Check the results/ directory for images & plots\
