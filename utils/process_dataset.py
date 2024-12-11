@@ -54,8 +54,8 @@ def data_preprocess(X , y , flag=False):
     X = X / 255 # normalize
     X_train , X_test , y_train , y_test = train_test_split(X , y , test_size=0.3 , random_state=42)
 
-    if (flag == True): # only return test
-        return X_test , y_test
+    if (flag == True): # return train/test w/o dataloaders
+        return X_train , X_test , y_train , y_test
 
     train_data = TensorDataset(X_train , y_train)
     test_data = TensorDataset(X_test , y_test)

@@ -26,9 +26,9 @@ eval = SceneEvaluator()
 
 if (model_selection == 1):
     print("Evaluating XGBoost...")
-    model = xgb.classifier
+    model = xgb
     pkl_flag = True # if evaluating xgboost
-    saved_model_file = 'xgboost.pkl'
+    saved_model_file = 'revised_xgboost.pkl'
 elif (model_selection == 2):
     print("Evaluating Logistic Regression...")
     model = log_reg.Log_Reg()

@@ -46,7 +46,7 @@ class SceneEvaluator(): # for good practice, eliminate global variables
             model.eval() # set model to evaluation
         
         for h in range(0 , height - 20 , stride):
-            #print(f"\r\tEvaluating row {(h // stride)} of {((height - 20) // stride)}" , end="")
+            print(f"\r\tEvaluating row {(h // stride)} of {((height - 20) // stride)}" , end="")
             for w in range(0 , width - 20 , stride):
                 img_box = []
                 img_box.append(scene[h:h + 20 , w:w + 20]) # append pixels in window
@@ -58,9 +58,20 @@ class SceneEvaluator(): # for good practice, eliminate global variables
                 if (flag): # predict xgb model if flag raised
                     log_pred = log(img_box.float()).detach().numpy()
                     cnn_pred = cnn(img_box.float()).detach().numpy()
-                    xgb_features = np.hstack([log_pred , cnn_pred])
+                    log_pred_print = log(img_box.float())
+                    cnn_pred_print = cnn(img_box.float())
+                    log_pred_print = torch.softmax(log_pred_print , dim=1)[0 , 1].item() # calc conf to reduce false positives
+                    cnn_pred_print = torch.softmax(cnn_pred_print , dim=1)[0 , 1].item() # calc conf to reduce false positives
+
+                    #print(log_pred_print)
+                    #print(cnn_pred_print)
+
+                    xgb_features = np.hstack([np.array(log_pred_print) , np.array(cnn_pred_print)])
+                    print(xgb_features.reshape(1,-1))
                     prediction = model.predict_proba(xgb_features)
+                    #print(prediction)
                     confidence = prediction[:,1] # store probability of class 1 as confidence
+                    print(confidence)
                     prediction = 1 # set prediction to 1 (its always 1, idk why)
                 else: # for logistic & cnn
                     prediction = model(img_box)
@@ -68,11 +79,12 @@ class SceneEvaluator(): # for good practice, eliminate global variables
                     prediction = prediction.argmax(dim=1 , keepdim=True) # determine positive/negative prediction
 
                 if confidence > 0.88:  # set to 0.75 for scene_6                  
-                    if prediction == 1:                     
+                    if prediction == 1:  
+                        #print("hit")                   
                         sub_img.add_patch(patches.Rectangle((w , h) , 20 , 20 , edgecolor = 'blue' , facecolor='none')) # segment positive prediction  
 
                         plt.draw()
-                        #plt.pause(0.05)          
+                        plt.pause(0.01)          
 
         end = time.time()
         print(f"\nScene Evaluated in {(end - start):.3f} seconds")

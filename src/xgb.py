@@ -29,27 +29,60 @@ class classifier():
         print("Models loaded")
 
         X , y = utils.process_dataset.load_dataset()
-        X_test , y_test = utils.process_dataset.data_preprocess(X , y , flag=True) # flag only return test
+        train , test = utils.process_dataset.data_preprocess(X , y) # flag only return test
 
         pred1 , pred2 = 0 , 0
-
+        y_pred , y_train = [] , []
+        print("Training...")
         with torch.no_grad():
-            X_test = X_test.permute(0, 1, 3, 2)
-            pred1 = log_reg_model(X_test.float()).numpy()
-            pred2 = cnn_model(X_test.float()).numpy()
+            for (data , target) in train:
+                pred_log = log_reg_model(data.float())
+                pred_cnn = log_reg_model(data.float())
+                pred_log= pred_log.argmax(dim=1 , keepdim=True)
+                pred_cnn = pred_cnn.argmax(dim=1 , keepdim=True) # calc conf to reduce false positives
+                y_pred.append(np.vstack([pred_log , pred_cnn]))
+                y_train.append(target.view_as(pred_log))
 
-        xgb_features = hstack([pred1, pred2])
+        y_train = np.array(y_train).squeeze()
+        y_train = y_train[:,-1]
+        y_pred = np.array(y_pred).squeeze()
+        y_pred = y_pred[:,-1]
 
         xgb_model = XGBClassifier()
-        xgb_model.fit(xgb_features, y_test)
-        joblib.dump(xgb_model, os.path.join(save_dir , "xgboost.pkl")) # save model to data/saved_models
+        xgb_model.fit(y_pred.reshape(-1,1) , y_train)
+        joblib.dump(xgb_model, os.path.join(save_dir , "revised_xgboost.pkl")) # save model to data/saved_models
+
+        print("Training complete")
 
         # Evaluate model
-        y_pred = xgb_model.predict(xgb_features)
+        #xgb_model.eval()
+        y_pred , y_test = [] , []
+        count = 0
+        
+        print("Size " , len(test.dataset))
+        with torch.no_grad():
+            for (data , target) in test:
+                count += 1
+                pred_log = log_reg_model(data.float())
+                pred_cnn = log_reg_model(data.float())
+                pred_log= pred_log.argmax(dim=1 , keepdim=True)
+                pred_cnn = pred_cnn.argmax(dim=1 , keepdim=True) # calc conf to reduce false positives
+                y_pred.append(np.vstack([pred_log , pred_cnn]))
+                y_test.append(target.view_as(pred_log))
+        print(np.array(y_pred).shape)
+        y_test = np.array(y_test).squeeze()
+        y_test = y_test[:,-1]
+        y_pred = np.array(y_pred).squeeze()
+        y_pred = y_pred[:,-1]
+
+        y_pred = xgb_model.predict(y_pred.reshape(-1,1))
+        print(y_pred.shape)
+        print(y_test.shape)
+
         print(classification_report(y_test, y_pred))
 
         # Confusion matrix
         cm = confusion_matrix(y_test, y_pred)
         disp = ConfusionMatrixDisplay(confusion_matrix=cm)
         disp.plot()
-        plt.savefig(os.path.join("results/confusion_matrix_xgb.png"))
+        plt.savefig(os.path.join("results/revised_confusion_matrix_xgb.png"))
