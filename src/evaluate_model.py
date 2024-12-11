@@ -16,7 +16,7 @@ model_selection = 3
 # - 2 : San Diego Intl (SAN)
 # - 3 : Los Angeles Intl (LAX)
 # - 4 : Southern California Logistics (SCLA) Airport Boneyard 
-# - 5 : New Jersey Coast (2022) 39°28'20.2"N 74°18'49.7"W
+# - 5 : New Jersey Coast (Nov 2021) 39°28'20.2"N 74°18'49.7"W (15,000ft)
 scene_num = 1
 
 ############################################

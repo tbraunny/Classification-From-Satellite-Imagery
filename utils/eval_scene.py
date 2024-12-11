@@ -46,7 +46,7 @@ class SceneEvaluator(): # for good practice, eliminate global variables
             model.eval() # set model to evaluation
         
         for h in range(0 , height - 20 , stride):
-            print(f"\r\tEvaluating row {(h // stride)} of {((height - 20) // stride)}" , end="")
+            #print(f"\r\tEvaluating row {(h // stride)} of {((height - 20) // stride)}" , end="")
             for w in range(0 , width - 20 , stride):
                 img_box = []
                 img_box.append(scene[h:h + 20 , w:w + 20]) # append pixels in window
@@ -67,8 +67,8 @@ class SceneEvaluator(): # for good practice, eliminate global variables
                     confidence = torch.softmax(prediction , dim=1)[0 , 1].item() # calc conf to reduce false positives
                     prediction = prediction.argmax(dim=1 , keepdim=True) # determine positive/negative prediction
 
-                if confidence > 0.88:                    
-                    if prediction == 1:                        
+                if confidence > 0.88:  # set to 0.75 for scene_6                  
+                    if prediction == 1:                     
                         sub_img.add_patch(patches.Rectangle((w , h) , 20 , 20 , edgecolor = 'blue' , facecolor='none')) # segment positive prediction  
 
                         plt.draw()
