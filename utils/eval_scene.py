@@ -56,23 +56,10 @@ class SceneEvaluator(): # for good practice, eliminate global variables
                 img_box = img_box.view(1 , 3 , 20 , 20) # ensure same window size
                 
                 if (flag): # predict xgb model if flag raised
-                    log_pred = log(img_box.float()).detach().numpy()
-                    cnn_pred = cnn(img_box.float()).detach().numpy()
-                    log_pred_print = log(img_box.float())
-                    cnn_pred_print = cnn(img_box.float())
-                    log_pred_print = torch.softmax(log_pred_print , dim=1)[0 , 1].item() # calc conf to reduce false positives
-                    cnn_pred_print = torch.softmax(cnn_pred_print , dim=1)[0 , 1].item() # calc conf to reduce false positives
+                    img_box = img_box.reshape(img_box.size(0), -1)
 
-                    #print(log_pred_print)
-                    #print(cnn_pred_print)
-
-                    xgb_features = np.hstack([np.array(log_pred_print) , np.array(cnn_pred_print)])
-                    print(xgb_features.reshape(1,-1))
-                    prediction = model.predict_proba(xgb_features)
-                    #print(prediction)
-                    confidence = prediction[:,1] # store probability of class 1 as confidence
-                    print(confidence)
-                    prediction = 1 # set prediction to 1 (its always 1, idk why)
+                    prediction = model.predict(img_box)
+                    confidence = 1
                 else: # for logistic & cnn
                     prediction = model(img_box)
                     confidence = torch.softmax(prediction , dim=1)[0 , 1].item() # calc conf to reduce false positives
