@@ -9,7 +9,7 @@ Test run on imagery that captured a lone aircraft in flight. Our CNN model captu
 
 Don't see it? Let's zoom in...
 
-<!--![Zoomed image of plane bounded and captured by ML model](results/scene5_evaluation_CNN_zoomed.png)-->
+![Zoomed image of plane bounded and captured by ML model](results/scene5_evaluation_CNN_zoomed.png)
 
 Before running in bash terminal, must run the following command to ensure relative file path compatibility:
 >export PYTHONPATH=$(pwd)
